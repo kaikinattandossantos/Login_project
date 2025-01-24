@@ -1,0 +1,6 @@
+package Login_API
+
+public interface UserRepositories extends Jparepository<User, String> {
+
+	
+}
