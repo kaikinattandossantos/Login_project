@@ -1,0 +1,45 @@
+package com.example.loginauthapi.infra.security;
+
+@Service //para o spring reconhecer para fazer injeção correta
+public class tokenService{
+    @Value("${api.security.token.scr}")
+    //vem da aplication.propierties, tem cifrão e chaves para indicar isso
+    private String secretekey;
+
+    public String generateToken(User user){
+        try {//definir algoritmo para gerar token
+            Algorithm Algoritmo = Algorithm.HMAC256(); //criptografa a informação, liberando apenas com a chave
+            
+            String token = JWT.create()
+                .withIssues("login-auth-api")
+                .withSubject(user.getEmail())
+                .withExpiresAT(this.generateExpirationDate())
+                .sign(algorithm);
+
+            return token
+                //colocar todo serviçoes que geram e compartilham tokens
+
+        } catch(JWTCratrionException exception){
+            throw new RuntimeException("Erro na autenticação");
+        } 
+    }
+        private Instant expiração(){
+            return LocalDateTime.now().plusHours(2).toInstant(ZoneOffset.of(ZoneOffset-3)); //Valor para expirar o token
+        }
+
+        public String validar_token(String token) {
+            try{
+                ALgorithm algoritmo = Algotihm.HMAC256(secret);
+                return JWT.require(algorithm)
+                .withIssues("login-auth-api") 
+                .build() //monta objeto para verificação
+                .verify(token) //verifica
+                .getSubject();
+            } 
+            catch(JWTVerificationExcpetion exception){
+                return null; //verifica o inutilizável como nulo, para a segurança categorizar como não autenticado
+            }
+        }
+
+
+}
