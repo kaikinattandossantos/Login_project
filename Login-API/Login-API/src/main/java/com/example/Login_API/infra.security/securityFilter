@@ -1,0 +1,49 @@
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import java.io.IOException;
+import java.util.Collections;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
+@Component //para o spring ver ela
+public class SecurityFilter extends OncePerRequestFilter { 
+    //filtro antes do controler, autenticando
+
+    @Autowired
+    TokenService tokenService;
+
+    @Autowired
+    UserRepository userRepository; //verificação do token
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) //método será o filtro
+            throws ServletException, IOException {
+        var token = this.recoverToken(request);
+        var login = tokenService.validateToken(token); //função para validar
+        //login pois retorna o email, pois retorna o que vem de getsubject em TokenService
+
+        if (login != null) // se não for nulo, buscará um usuário no banco de dados
+        {
+            var user = userRepository.findByUsername(login);
+            var authentication = new UsernamePasswordAuthenticationToken(
+                    user, null, Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))//role é uma função simples para esse site
+            );
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+        }
+
+        filterChain.doFilter(request, response);
+    }
+
+    private String recoverToken(HttpServletRequest request) //método auxiliar 
+    {
+        var authorizationHeader = request.getHeader("Authorization");
+        if (authorizationHeader == null) return null;
+        return authHeadrer.replace("Bearer ", ""); //elimina valores vazios para somente analisar o token
+    }
+}
